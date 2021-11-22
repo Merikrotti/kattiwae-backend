@@ -16,6 +16,21 @@ namespace cryptogram_backend.Controllers
     [Route("api/[controller]/[action]")]
     public class CryptogramController : ControllerBase
     {
+        [HttpGet]
+        [ActionName("PostUrl")]
+        public async Task<IActionResult> PostUrl(string file, String answer)
+        {
+            if (answer.Length < 4)
+                return BadRequest(new { error = "Answer should be more than 4 letters" });
+
+            Scrambler cryptogramScrambler = new Scrambler(answer);
+
+            CryptogramDb database = new CryptogramDb();
+            await database.InsertCryptogramData(answer, cryptogramScrambler.ScrambledAnswer, file, "url");
+
+            return Ok(new { posted_answer = answer, scrambled = cryptogramScrambler.ScrambledAnswer});
+        }
+
         [HttpPost]
         [ActionName("PostImage")]
         public async Task<IActionResult> Post(IFormFile file, String answer)
@@ -35,7 +50,7 @@ namespace cryptogram_backend.Controllers
             Scrambler cryptogramScrambler = new Scrambler(answer);
 
             CryptogramDb database = new CryptogramDb();
-            await database.InsertCryptogramData(answer, cryptogramScrambler.ScrambledAnswer, imageSaver.GetFileName());
+            await database.InsertCryptogramData(answer, cryptogramScrambler.ScrambledAnswer, imageSaver.GetFileName(), "image");
 
             return Ok(new { posted_answer = answer, scrambled = cryptogramScrambler.ScrambledAnswer, file_exists = imageSaver.GetFileExists() });
         }

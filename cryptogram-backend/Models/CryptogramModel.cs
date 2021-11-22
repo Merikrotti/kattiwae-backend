@@ -11,5 +11,6 @@ namespace cryptogram_backend.Models
         public String Answer { get; set; }
         public String ScrambledAnswer { get; set; }
         public String ImageName { get; set; }
+        public String ContentType { get; set; }
     }
 }

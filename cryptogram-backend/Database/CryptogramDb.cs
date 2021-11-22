@@ -35,17 +35,19 @@ namespace cryptogram_backend.Database
             conn = new NpgsqlConnection(connString);
         }
 
-        public async Task InsertCryptogramData(String answer, String scrambled, String filename)
+        public async Task InsertCryptogramData(String answer, String scrambled, String filename, String contentType)
         {
             conn.Open();
-            var command = new NpgsqlCommand("INSERT INTO cryptogram(answer, scrambled, filename) VALUES (@answer, @scrambled, @filename)", conn);
+            var command = new NpgsqlCommand("INSERT INTO cryptogram(answer, scrambled, filename, contenttype) VALUES (@answer, @scrambled, @filename, @contenttype)", conn);
             var psqlAnswer = command.Parameters.Add("answer", NpgsqlTypes.NpgsqlDbType.Varchar);
             var psqlScrambled = command.Parameters.Add("scrambled", NpgsqlTypes.NpgsqlDbType.Varchar);
             var psqlFilename = command.Parameters.Add("filename", NpgsqlTypes.NpgsqlDbType.Varchar);
+            var psqlContenttype = command.Parameters.Add("contenttype", NpgsqlTypes.NpgsqlDbType.Varchar);
 
             psqlAnswer.Value = answer;
             psqlScrambled.Value = scrambled;
             psqlFilename.Value = filename;
+            psqlContenttype.Value = contentType;
 
             command.Prepare();
 
@@ -56,7 +58,7 @@ namespace cryptogram_backend.Database
         public async Task<CryptogramModel> GetLatest()
         {
             conn.Open();
-            var command = new NpgsqlCommand("SELECT id, answer, scrambled, filename FROM cryptogram ORDER BY id DESC LIMIT 1", conn);
+            var command = new NpgsqlCommand("SELECT id, answer, scrambled, filename, contenttype FROM cryptogram ORDER BY id DESC LIMIT 1", conn);
             var reader = await command.ExecuteReaderAsync();
 
             CryptogramModel newModel = new CryptogramModel();
@@ -67,6 +69,7 @@ namespace cryptogram_backend.Database
                 newModel.Answer = reader.GetString(1);
                 newModel.ScrambledAnswer = reader.GetString(2);
                 newModel.ImageName = reader.GetString(3);
+                newModel.ContentType = reader.GetString(4);
             }
 
             conn.Close();
@@ -76,7 +79,7 @@ namespace cryptogram_backend.Database
         public async Task<List<CryptogramModel>> GetLast50()
         {
             conn.Open();
-            var command = new NpgsqlCommand("SELECT id, answer, scrambled, filename FROM cryptogram ORDER BY id DESC LIMIT 50", conn);
+            var command = new NpgsqlCommand("SELECT id, answer, scrambled, filename, contenttype FROM cryptogram ORDER BY id DESC LIMIT 50", conn);
             var reader = await command.ExecuteReaderAsync();
 
             
@@ -88,6 +91,7 @@ namespace cryptogram_backend.Database
                 newModel.Answer = reader.GetString(1);
                 newModel.ScrambledAnswer = reader.GetString(2);
                 newModel.ImageName = reader.GetString(3);
+                newModel.ContentType = reader.GetString(4);
                 modelList.Add(newModel);
             }
 
