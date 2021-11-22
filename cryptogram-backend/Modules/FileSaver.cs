@@ -16,6 +16,7 @@ namespace cryptogram_backend.Modules
         private bool failed;
         private bool fileExists;
         private String newFileName = "";
+        private String mimeType = "";
 
         public FileSaver(String _savepath, String[] _acceptedTypes)
         {
@@ -28,6 +29,8 @@ namespace cryptogram_backend.Modules
 
         public async Task Start(IFormFile file)
             => await SaveFile(file);
+        public String GetMimetype()
+            => mimeType;
 
         public bool GetStatus()
             => failed;
@@ -86,11 +89,20 @@ namespace cryptogram_backend.Modules
             switch(contentType)
             {
                 case "image/png":
+                    mimeType = "image";
                     return ".png";
                 case "image/jpeg":
+                    mimeType = "image";
                     return ".jpg";
                 case "image/gif":
+                    mimeType = "image";
                     return ".gif";
+                case "video/mp4":
+                    mimeType = "video/mp4";
+                    return ".mp4";
+                case "video/webm":
+                    mimeType = "video/webm";
+                    return ".webm";
                 default:
                     failed = true;
                     errorMessage = "MimeType not defined";

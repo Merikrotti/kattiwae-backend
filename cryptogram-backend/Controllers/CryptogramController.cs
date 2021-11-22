@@ -20,6 +20,12 @@ namespace cryptogram_backend.Controllers
         [ActionName("PostUrl")]
         public async Task<IActionResult> PostUrl(string file, String answer)
         {
+            if (file == null)
+                return BadRequest(new { error = "File parameter is null" });
+
+            if (answer == null)
+                return BadRequest(new { error = "Answer parameter is null" });
+
             if (answer.Length < 4)
                 return BadRequest(new { error = "Answer should be more than 4 letters" });
 
@@ -35,10 +41,16 @@ namespace cryptogram_backend.Controllers
         [ActionName("PostImage")]
         public async Task<IActionResult> Post(IFormFile file, String answer)
         {
+            if (file == null)
+                return BadRequest(new { error = "File parameter is null" });
+
+            if (answer == null)
+                return BadRequest(new { error = "Answer parameter is null" });
+
             if (answer.Length < 4)
                 return BadRequest(new { error = "Answer should be more than 4 letters"});
 
-            String[] acceptedTypes = { "image/gif", "image/png", "image/jpeg" };
+            String[] acceptedTypes = { "image/gif", "image/png", "image/jpeg", "video/webm", "video/mp4" };
             var savePath = Path.GetFullPath(AppContext.BaseDirectory + "images/");
 
             FileSaver imageSaver = new FileSaver(savePath, acceptedTypes);
@@ -50,7 +62,7 @@ namespace cryptogram_backend.Controllers
             Scrambler cryptogramScrambler = new Scrambler(answer);
 
             CryptogramDb database = new CryptogramDb();
-            await database.InsertCryptogramData(answer, cryptogramScrambler.ScrambledAnswer, imageSaver.GetFileName(), "image");
+            await database.InsertCryptogramData(answer, cryptogramScrambler.ScrambledAnswer, imageSaver.GetFileName(), imageSaver.GetMimetype());
 
             return Ok(new { posted_answer = answer, scrambled = cryptogramScrambler.ScrambledAnswer, file_exists = imageSaver.GetFileExists() });
         }
