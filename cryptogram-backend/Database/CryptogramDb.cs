@@ -15,6 +15,11 @@ namespace cryptogram_backend.Database
 
         NpgsqlConnection conn;
 
+        /// <summary>
+        /// Constructor to initiate the SQL connection with YAML.
+        /// 
+        /// See config.yaml for config style.
+        /// </summary>
         public CryptogramDb()
         {
             var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
@@ -35,6 +40,16 @@ namespace cryptogram_backend.Database
             conn = new NpgsqlConnection(connString);
         }
 
+        /// <summary>
+        /// Inserts data into the cryptogram database
+        /// 
+        /// The data should be processed first by FileSaver and Scrambler!
+        /// </summary>
+        /// <param name="answer">Cryptogram answer</param>
+        /// <param name="scrambled">Scrambled answer</param>
+        /// <param name="filename">File name</param>
+        /// <param name="contentType">Content type</param>
+        /// <returns></returns>
         public async Task InsertCryptogramData(String answer, String scrambled, String filename, String contentType)
         {
             conn.Open();
@@ -55,6 +70,10 @@ namespace cryptogram_backend.Database
             conn.Close();
         }
 
+        /// <summary>
+        /// Gets the latest item in the cryptogram database
+        /// </summary>
+        /// <returns>CryptogramModel</returns>
         public async Task<CryptogramModel> GetLatest()
         {
             conn.Open();
@@ -76,19 +95,33 @@ namespace cryptogram_backend.Database
             return newModel;
         }
 
-        public async Task<List<CryptogramModel>> GetLast50()
+        /// <summary>
+        /// Gets 50 last cryptograms saved into the database by page. Newest one hidden
+        /// </summary>
+        /// <param name="page">Which block of 50 are we looking at. (50 * page)</param>
+        /// <returns>List of 50 items of CryptogramModel</returns>
+        public async Task<List<CryptogramModel>> GetData(int page)
         {
-            conn.Open();
-            var command = new NpgsqlCommand("SELECT id, answer, scrambled, filename, contenttype FROM cryptogram ORDER BY id DESC LIMIT 50", conn);
-            var reader = await command.ExecuteReaderAsync();
+            int latest = GetLatest().Result.Id;
+            int index = latest - page * 50;
+            if (index < 1)
+                return null;
 
+            conn.Open();
+            var command = new NpgsqlCommand("SELECT id, answer, scrambled, filename, contenttype FROM cryptogram WHERE id < @index ORDER BY id DESC LIMIT 50", conn);
+            var psqlIndex = command.Parameters.Add("index", NpgsqlTypes.NpgsqlDbType.Integer);
+
+            psqlIndex.Value = index;
+            command.Prepare();
+
+            var reader = await command.ExecuteReaderAsync();
             
             List<CryptogramModel> modelList = new List<CryptogramModel>();
             while (await reader.ReadAsync())
             {
                 CryptogramModel newModel = new CryptogramModel();
                 newModel.Id = reader.GetInt32(0);
-                newModel.Answer = reader.GetString(1);
+                newModel.Answer = reader.GetString(1); 
                 newModel.ScrambledAnswer = reader.GetString(2);
                 newModel.ImageName = reader.GetString(3);
                 newModel.ContentType = reader.GetString(4);
@@ -98,7 +131,45 @@ namespace cryptogram_backend.Database
             conn.Close();
             return modelList;
         }
+
+        /// <summary>
+        /// Gets the exact item by id from cryptogram database
+        /// </summary>
+        /// <param name="id">Database index</param>
+        /// <returns>CryptogramModel</returns>
+        public async Task<CryptogramModel> GetExact(int id)
+        {
+            int latest = GetLatest().Result.Id;
+            if (id >= latest || id < 1)
+                return null;
+
+            conn.Open();
+            var command = new NpgsqlCommand("SELECT id, answer, scrambled, filename, contenttype FROM cryptogram WHERE id = @index", conn);
+            var psqlIndex = command.Parameters.Add("index", NpgsqlTypes.NpgsqlDbType.Integer);
+
+            psqlIndex.Value = id;
+            command.Prepare();
+
+            var reader = await command.ExecuteReaderAsync();
+
+            CryptogramModel newModel = new CryptogramModel();
+            while (await reader.ReadAsync())
+            {
+                newModel.Id = reader.GetInt32(0);
+                newModel.Answer = reader.GetString(1);
+                newModel.ScrambledAnswer = reader.GetString(2);
+                newModel.ImageName = reader.GetString(3);
+                newModel.ContentType = reader.GetString(4);
+            }
+
+            conn.Close();
+            return newModel;
+        }
     }
+
+    /// <summary>
+    /// Configuration "profile" for the PostgreSQL connection
+    /// </summary>
     class Configuration
     {
         public String Host { get; set; }

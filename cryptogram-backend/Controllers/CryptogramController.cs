@@ -69,12 +69,19 @@ namespace cryptogram_backend.Controllers
 
         [HttpGet]
         [ActionName("GetHint")]
-        public async Task<IActionResult> GetHint()
+        public async Task<IActionResult> GetHint(String hint)
         {
+            if(hint == null)
+                return BadRequest(new { error = "Hint parameter is null" });
+            if(hint.Length > 1)
+                return BadRequest(new { error = "Hint parameter is not a char" });
+
             CryptogramDb database = new CryptogramDb();
             CryptogramModel latest = await database.GetLatest();
 
-            int index = new Random().Next(0, latest.Answer.Length - 1);
+            int index = latest.ScrambledAnswer.IndexOf(hint[0]);
+            if(index == -1)
+                return BadRequest(new { error = "Char not found, reload scrambled text" });
 
             return Ok(new { A = latest.ScrambledAnswer[index], B = latest.Answer[index] });
         }
@@ -91,6 +98,15 @@ namespace cryptogram_backend.Controllers
         }
 
         [HttpGet]
+        [ActionName("HasChanged")]
+        public async Task<bool> HasChanged(String answer)
+        {
+            CryptogramDb database = new CryptogramDb();
+            CryptogramModel latest = await database.GetLatest();
+            return (answer.ToLower() == latest.Answer.ToLower());
+        }
+
+        [HttpGet]
         [ActionName("GetScramble")]
         public async Task<String> GetScramble()
         {
@@ -99,15 +115,30 @@ namespace cryptogram_backend.Controllers
             return latest.ScrambledAnswer;
         }
 
+
         [HttpGet]
-        [ActionName("GetLast50")]
-        public async Task<List<CryptogramModel>> GetLast50()
+        [ActionName("GetData")]
+        public async Task<List<CryptogramModel>> GetData(int page)
         {
             CryptogramDb database = new CryptogramDb();
-            List<CryptogramModel> latest = await database.GetLast50();
+            List<CryptogramModel> latest = await database.GetData(page);
+            if (latest == null)
+                return null;
             return latest;
         }
 
+        [HttpGet]
+        [ActionName("GetExact")]
+        public async Task<CryptogramModel> GetExact(int id)
+        {
+            CryptogramDb database = new CryptogramDb();
+            CryptogramModel latest = await database.GetExact(id);
+
+            return latest;
+        }
+
+        /*
+        
         [HttpGet]
         [ActionName("GetLatest")]
         public async Task<CryptogramModel> GetLatest()
@@ -116,6 +147,7 @@ namespace cryptogram_backend.Controllers
             CryptogramModel latest = await database.GetLatest();
             return latest;
         }
+        */
     }
 
 }

@@ -32,6 +32,9 @@ namespace cryptogram_backend
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "cryptogram_backend", Version = "v1" });
             });
+            services.Configure<IISServerOptions>(options => {
+                options.MaxRequestBodySize = int.MaxValue;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

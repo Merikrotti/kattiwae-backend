@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace cryptogram_backend.Modules
 {
+    /// <summary>
+    /// A file save function for image saving and metadata processing.
+    /// </summary>
     public class FileSaver
     {
         private String savepath;
@@ -18,6 +21,11 @@ namespace cryptogram_backend.Modules
         private String newFileName = "";
         private String mimeType = "";
 
+        /// <summary>
+        /// Constructor for save path and the accepted mimetypes
+        /// </summary>
+        /// <param name="_savepath">Where to save the files</param>
+        /// <param name="_acceptedTypes">What mimetypes are allowed</param>
         public FileSaver(String _savepath, String[] _acceptedTypes)
         {
             acceptedTypes = _acceptedTypes;
@@ -27,23 +35,56 @@ namespace cryptogram_backend.Modules
             fileExists = false;
         }
 
+        /// <summary>
+        /// Starts the saving and data gathering of the file.
+        /// </summary>
+        /// <param name="file">File to save</param>
+        /// <returns>Nothing</returns>
         public async Task Start(IFormFile file)
             => await SaveFile(file);
+
+        /// <summary>
+        /// Returns the mimetype of the file
+        /// </summary>
+        /// <returns>String</returns>
         public String GetMimetype()
             => mimeType;
 
+        /// <summary>
+        /// Returns if the saving was a success
+        /// </summary>
+        /// <returns>Boolean</returns>
         public bool GetStatus()
             => failed;
 
+        /// <summary>
+        /// Returns the new filename
+        /// </summary>
+        /// <returns>String</returns>
         public String GetFileName()
             => newFileName;
 
+        /// <summary>
+        /// Returns if the file already existed
+        /// </summary>
+        /// <returns></returns>
         public bool GetFileExists()
             => fileExists;
 
+        /// <summary>
+        /// Returns the error message if any
+        /// </summary>
+        /// <returns>String</returns>
         public String GetErrorMessage()
             => errorMessage;
 
+        /// <summary>
+        /// Checks if the file is too big, an accepted mimetype and saves it. (.tmp -> proper file extension)
+        /// 
+        /// Uses MD5 to hash the image to avoid duplicates. (Though might be a bit useless)
+        /// </summary>
+        /// <param name="file">File to save</param>
+        /// <returns>Nothing</returns>
         private async Task SaveFile(IFormFile file)
         {
             long size = file.Length;
@@ -51,8 +92,8 @@ namespace cryptogram_backend.Modules
             if (size < 50 || acceptedTypes.Where(c => c == file.ContentType).FirstOrDefault() == null)
                 errorMessage = "Not an image";
 
-            if (size > 31457280)
-                errorMessage = "Size too large (>30MB)";
+            if (size > 104857600)
+                errorMessage = "Size too large (>100MB)";
 
             if(errorMessage != "")
             {
@@ -84,6 +125,12 @@ namespace cryptogram_backend.Modules
                 System.IO.File.Move(filePath, savepath + newFileName);
         }
 
+        /// <summary>
+        /// Lazy way to translate the mimetypes for the React app. Makes my life easier.
+        /// Example: jpeg is .jpg etc
+        /// </summary>
+        /// <param name="contentType">Content type of the file</param>
+        /// <returns>String</returns>
         private String MimeTypeTranslator(String contentType)
         {
             switch(contentType)
@@ -110,6 +157,11 @@ namespace cryptogram_backend.Modules
             }
         }
 
+        /// <summary>
+        /// Hashes a file by its name
+        /// </summary>
+        /// <param name="filename">Name of the file</param>
+        /// <returns>MD5 hash (String) of the file</returns>
         private String GetMD5String(string filename)
         {
             using (var md5 = MD5.Create())
