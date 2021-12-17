@@ -62,9 +62,40 @@ namespace cryptogram_backend.Controllers
             Scrambler cryptogramScrambler = new Scrambler(answer);
 
             CryptogramDb database = new CryptogramDb();
+
+            if (imageSaver.GetFileExists())
+                return Conflict(new { error = "Image already exists", filename = imageSaver.GetFileName(), contentType = imageSaver.GetMimetype()});
+
             await database.InsertCryptogramData(answer, cryptogramScrambler.ScrambledAnswer, imageSaver.GetFileName(), imageSaver.GetMimetype());
 
-            return Ok(new { posted_answer = answer, scrambled = cryptogramScrambler.ScrambledAnswer, file_exists = imageSaver.GetFileExists() });
+            return Ok(new { posted_answer = answer, scrambled = cryptogramScrambler.ScrambledAnswer });
+        }
+
+        [HttpPost]
+        [ActionName("PostExisting")]
+        public async Task<IActionResult> PostExisting(String filename, String answer, String contentType)
+        {
+            if (filename == null)
+                return BadRequest(new { error = "File parameter is null" });
+
+            if (answer == null)
+                return BadRequest(new { error = "Answer parameter is null" });
+
+            if (answer.Length < 4)
+                return BadRequest(new { error = "Answer should be more than 4 letters" });
+
+            String[] acceptedTypes = { "image/gif", "image/png", "image/jpeg", "video/webm", "video/mp4" };
+
+            if (acceptedTypes.Where(c => c == contentType).FirstOrDefault() == null)
+                return BadRequest(new { error = "MimeType is wrong" });
+
+            CryptogramDb database = new CryptogramDb();
+
+            Scrambler cryptogramScrambler = new Scrambler(answer);
+
+            await database.InsertCryptogramData(answer, cryptogramScrambler.ScrambledAnswer, filename, contentType);
+
+            return Ok(new { posted_answer = answer, scrambled = cryptogramScrambler.ScrambledAnswer });
         }
 
         [HttpGet]
