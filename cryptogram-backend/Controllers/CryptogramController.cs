@@ -71,7 +71,7 @@ namespace cryptogram_backend.Controllers
             return Ok(new { posted_answer = answer, scrambled = cryptogramScrambler.ScrambledAnswer });
         }
 
-        [HttpPost]
+        [HttpGet]
         [ActionName("PostExisting")]
         public async Task<IActionResult> PostExisting(String filename, String answer, String contentType)
         {
