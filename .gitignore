@@ -11,6 +11,9 @@
 *.sln.docstates
 *.yaml
 
+#Ignore app settings, where secret tokens are stored
+appsettings.json
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
