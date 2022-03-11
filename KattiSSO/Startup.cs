@@ -1,12 +1,16 @@
-
+using cryptogram_backend.Models;
+using cryptogram_backend.Services.PasswordHasher;
+using cryptogram_backend.Services.TokenGenarator;
+using cryptogram_backend.Services.UserRepositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
@@ -15,13 +19,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace cryptogram_backend
+namespace KattiSSO
 {
     public class Startup
     {
+        private readonly IConfiguration _configuration;
+
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            _configuration = configuration;
         }
 
         public IConfiguration Configuration { get; }
@@ -29,18 +35,18 @@ namespace cryptogram_backend
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
             services.AddControllers();
+
 
             //Authentication config
             AuthenticationConfiguration authConfig = new AuthenticationConfiguration();
-            Configuration.Bind("Authentication", authConfig);
-            Console.WriteLine(authConfig.AccessTokenSecret);
+            _configuration.Bind("Authentication", authConfig);
+            services.AddSingleton(authConfig);
 
             //Authentication
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
             {
-                
+
                 options.TokenValidationParameters = new TokenValidationParameters()
                 {
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authConfig.AccessTokenSecret)),
@@ -52,22 +58,14 @@ namespace cryptogram_backend
                 };
             });
 
+            //Login services
+            services.AddSingleton<IPasswordHasher, BcryptHasher>();
+            services.AddSingleton<IUserRepository, DbUserRepository>();
+            services.AddSingleton<AccessTokenGenerator>();
+
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "cryptogram_backend", Version = "v1" });
-            });
-            services.Configure<IISServerOptions>(options => {
-                options.MaxRequestBodySize = int.MaxValue;
-            });
-            services.Configure<FormOptions>(x =>
-            {
-                x.ValueLengthLimit = int.MaxValue;
-                x.MultipartBodyLengthLimit = int.MaxValue;
-                x.MultipartHeadersLengthLimit = int.MaxValue;
-            });
-            services.Configure<KestrelServerOptions>(options =>
-            {
-                options.Limits.MaxRequestBodySize = int.MaxValue;
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "KattiSSO", Version = "v1" });
             });
         }
 
@@ -78,8 +76,8 @@ namespace cryptogram_backend
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "cryptogram_backend v1"));
-                
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "KattiSSO v1"));
+
                 // NOTE: DO NOT MOVE OUT OF DEV ENVIRONMENT, XSS ETC
                 // Exception: Handle CORS with nginx or other ways
                 app.UseCors(builder => builder
@@ -90,10 +88,9 @@ namespace cryptogram_backend
 
             app.UseHttpsRedirection();
 
+            app.UseRouting();
             app.UseAuthentication();
 
-            app.UseRouting();
-            
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
@@ -101,12 +98,5 @@ namespace cryptogram_backend
                 endpoints.MapControllers();
             });
         }
-        private class AuthenticationConfiguration
-        {
-            public string AccessTokenSecret { get; set; }
-            public string Issuer { get; set; }
-            public string Audience { get; set; }
-        }
     }
-    
 }

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace cryptogram_backend
+namespace KattiSSO
 {
     public class Program
     {
@@ -20,9 +20,8 @@ namespace cryptogram_backend
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseUrls("http://localhost:5500");
+                    webBuilder.UseUrls("http://localhost:5501");
                     webBuilder.UseStartup<Startup>();
                 });
-      
     }
 }

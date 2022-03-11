@@ -132,6 +132,8 @@ namespace cryptogram_backend.Controllers
         [ActionName("HasChanged")]
         public async Task<bool> HasChanged(String answer)
         {
+            if (answer == null)
+                return false;
             CryptogramDb database = new CryptogramDb();
             CryptogramModel latest = await database.GetLatest();
             return (answer.ToLower() == latest.Answer.ToLower());

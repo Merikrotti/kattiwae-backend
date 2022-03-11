@@ -16,28 +16,11 @@ namespace cryptogram_backend.Database
         NpgsqlConnection conn;
 
         /// <summary>
-        /// Constructor to initiate the SQL connection with YAML.
-        /// 
-        /// See config.yaml for config style.
+        /// Just opens a connection for now.
         /// </summary>
         public CryptogramDb()
         {
-            var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
-                .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                .Build();
-            System.Diagnostics.Debug.WriteLine(File.ReadAllText("config.yaml"));
-            var myConfig = deserializer.Deserialize<Configuration>(File.ReadAllText("config.yaml"));
-
-            string connString =
-                String.Format(
-                    "Server={0};Username={1};Database={2};Port={3};Password={4}",
-                    myConfig.Host,
-                    myConfig.User,
-                    myConfig.Dbname,
-                    myConfig.Port,
-                    myConfig.Password);
-
-            conn = new NpgsqlConnection(connString);
+            conn = new DbConnection().GetConnection();
         }
 
         /// <summary>
@@ -167,15 +150,4 @@ namespace cryptogram_backend.Database
         }
     }
 
-    /// <summary>
-    /// Configuration "profile" for the PostgreSQL connection
-    /// </summary>
-    class Configuration
-    {
-        public String Host { get; set; }
-        public String User { get; set; }
-        public String Dbname { get; set; }
-        public String Password { get; set; }
-        public String Port { get; set; }
-    }
 }
