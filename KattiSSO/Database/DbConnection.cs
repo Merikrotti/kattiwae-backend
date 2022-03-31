@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace cryptogram_backend.Database
+namespace KattiSSO.Database
 {
     /// <summary>
     /// TODO: Move to services, but for now this shall do.

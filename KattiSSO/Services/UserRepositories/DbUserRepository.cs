@@ -1,12 +1,11 @@
-﻿using cryptogram_backend.Database;
-using cryptogram_backend.Models;
+﻿using KattiSSO.Database;
+using KattiSSO.Models;
 using Npgsql;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using System.Threading.Tasks;
 
-namespace cryptogram_backend.Services.UserRepositories
+namespace KattiSSO.Services.UserRepositories
 {
     public class DbUserRepository : IUserRepository
     {
@@ -19,11 +18,45 @@ namespace cryptogram_backend.Services.UserRepositories
         {
             conn = new DbConnection().GetConnection();
         }
+        public async Task<User> GetById(int user_id)
+        {
+            try
+            {
+                conn.Open();
+                var command = new NpgsqlCommand("SELECT user_id, username, password FROM users WHERE user_id = @user_id", conn);
 
+                var psqlUser_id = command.Parameters.Add("user_id", NpgsqlTypes.NpgsqlDbType.Integer);
+                psqlUser_id.Value = user_id;
+
+                command.Prepare();
+
+                var reader = await command.ExecuteReaderAsync();
+
+                User newUser = new User();
+                while (await reader.ReadAsync())
+                {
+                    newUser.user_id = reader.GetInt32(0);
+                    newUser.username = reader.GetString(1);
+                    newUser.password = reader.GetString(2);
+                }
+                if (newUser.username == null)
+                    newUser = null;
+                return newUser;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("GetByName error: " + e);
+            }
+            finally
+            {
+                conn.Close();
+            }
+
+            return null;
+        }
         public async Task<User> GetByName(string name)
         {
             try { 
-                var conn = new DbConnection().GetConnection();
                 conn.Open();
                 var command = new NpgsqlCommand("SELECT user_id, username, password FROM users WHERE LOWER(username) = @username", conn);
 

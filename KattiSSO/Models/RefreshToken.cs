@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace KattiSSO.Models
 {
-    public class User
+    public class RefreshToken
     {
+        public int ref_id { get; set; }
         public int user_id { get; set; }
-        public string username { get; set; }
-        public string password { get; set; }
+        public string Token { get; set; }
+
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace cryptogram_backend.Services.PasswordHasher
+namespace KattiSSO.Services.PasswordHasher
 {
     public interface IPasswordHasher
     {

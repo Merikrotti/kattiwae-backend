@@ -1,4 +1,5 @@
 
+using cryptogram_backend.Services.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -19,9 +20,11 @@ namespace cryptogram_backend
 {
     public class Startup
     {
+        private readonly IConfiguration _configuration;
+
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            _configuration = configuration;
         }
 
         public IConfiguration Configuration { get; }
@@ -32,10 +35,11 @@ namespace cryptogram_backend
 
             services.AddControllers();
 
+            services.AddSingleton<FavouriteRepository>();
+
             //Authentication config
             AuthenticationConfiguration authConfig = new AuthenticationConfiguration();
-            Configuration.Bind("Authentication", authConfig);
-            Console.WriteLine(authConfig.AccessTokenSecret);
+            _configuration.Bind("Authentication", authConfig);
 
             //Authentication
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>

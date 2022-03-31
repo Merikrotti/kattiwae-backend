@@ -1,6 +1,7 @@
 ﻿using cryptogram_backend.Database;
 using cryptogram_backend.Models;
 using cryptogram_backend.Modules;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;

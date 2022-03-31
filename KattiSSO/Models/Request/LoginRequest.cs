@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace cryptogram_backend.Models.Request
+namespace KattiSSO.Models.Request
 {
     public class LoginRequest
     {

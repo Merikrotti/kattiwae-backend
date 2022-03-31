@@ -1,7 +1,8 @@
-using cryptogram_backend.Models;
-using cryptogram_backend.Services.PasswordHasher;
-using cryptogram_backend.Services.TokenGenarator;
-using cryptogram_backend.Services.UserRepositories;
+using KattiSSO.Models;
+using KattiSSO.Services.PasswordHasher;
+using KattiSSO.Services.TokenGenerator;
+using KattiSSO.Services.UserRepositories;
+using KattiSSO.Services.TokenValidators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -18,6 +19,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using KattiSSO.Services.RefreshTokenRepostitory;
+using KattiSSO.Services.Authenticators;
 
 namespace KattiSSO
 {
@@ -62,6 +65,12 @@ namespace KattiSSO
             services.AddSingleton<IPasswordHasher, BcryptHasher>();
             services.AddSingleton<IUserRepository, DbUserRepository>();
             services.AddSingleton<AccessTokenGenerator>();
+            services.AddSingleton<RefreshTokenGenerator>();
+            services.AddSingleton<RefreshTokenValidator>();
+            services.AddSingleton<RefreshTokenRepository>();
+            services.AddSingleton<TokenGenerator>();
+            services.AddSingleton<RoleRepository>();
+            services.AddSingleton<Authenticator>();
 
             services.AddSwaggerGen(c =>
             {
@@ -88,9 +97,8 @@ namespace KattiSSO
 
             app.UseHttpsRedirection();
 
-            app.UseRouting();
             app.UseAuthentication();
-
+            app.UseRouting();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

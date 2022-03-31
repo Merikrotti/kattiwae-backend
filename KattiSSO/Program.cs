@@ -20,7 +20,7 @@ namespace KattiSSO
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseUrls("http://localhost:5501");
+                    webBuilder.UseUrls("http://localhost:5550");
                     webBuilder.UseStartup<Startup>();
                 });
     }

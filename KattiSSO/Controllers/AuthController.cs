@@ -1,15 +1,20 @@
-﻿using cryptogram_backend.Models;
-using cryptogram_backend.Models.Request;
-using cryptogram_backend.Models.Response;
-using cryptogram_backend.Services.PasswordHasher;
-using cryptogram_backend.Services.TokenGenarator;
-using cryptogram_backend.Services.UserRepositories;
+﻿using KattiSSO.Models;
+using KattiSSO.Models.Request;
+using KattiSSO.Models.Response;
+using KattiSSO.Services.Authenticators;
+using KattiSSO.Services.PasswordHasher;
+using KattiSSO.Services.RefreshTokenRepostitory;
+using KattiSSO.Services.TokenGenerator;
+using KattiSSO.Services.TokenValidators;
+using KattiSSO.Services.UserRepositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace cryptogram_backend.Controllers
+namespace KattiSSO.Controllers
 {
     /// <summary>
     /// JWT Authentication controller
@@ -23,13 +28,27 @@ namespace cryptogram_backend.Controllers
     {
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
-        private readonly AccessTokenGenerator _tokenGenerator;
+        private readonly RefreshTokenRepository _refreshTokenRepository;
+        private readonly RefreshTokenValidator _refreshTokenValidator;
+        private readonly Authenticator _authenticator;
+        private readonly RoleRepository _roleRepository;
 
-        public AuthController(IUserRepository userRepository, IPasswordHasher pwhash, AccessTokenGenerator tokenGenerator)
+        public AuthController(
+            IUserRepository userRepository,
+            IPasswordHasher pwhash,
+            RefreshTokenRepository refreshTokenRepository,
+            AccessTokenGenerator tokenGenerator,
+            RefreshTokenGenerator refreshTokenGenerator,
+            RefreshTokenValidator refreshTokenValidator,
+            Authenticator authenticator,
+            RoleRepository roleRepository)
         {
             _userRepository = userRepository;
             _passwordHasher = pwhash;
-            _tokenGenerator = tokenGenerator;
+            _refreshTokenRepository = refreshTokenRepository;
+            _refreshTokenValidator = refreshTokenValidator;
+            _authenticator = authenticator;
+            _roleRepository = roleRepository;
         }
 
         [Authorize]
@@ -38,7 +57,39 @@ namespace cryptogram_backend.Controllers
         {
             string id = HttpContext.User.FindFirstValue("id");
             string name = HttpContext.User.FindFirstValue(ClaimTypes.Name);
-            return Ok(new { id = id, name = name});
+            var roleclaims = HttpContext.User.FindAll(ClaimTypes.Role);
+            List<string> roles = new List<string>();
+            foreach (var item in roleclaims)
+                roles.Add(item.ToString());
+            return Ok(new { id = id, name = name, roles = roles});
+        }
+
+        [Authorize]
+        [HttpGet("GetAllRoles")]
+        public async Task<IActionResult> GetAllRoles()
+        {
+            var roles = await _roleRepository.GetAllRoles();
+            return Ok(new { roles = roles });
+        }
+
+        [Authorize]
+        [HttpPost("linking")]
+        public async Task<IActionResult> RoleLinking([FromBody] RoleRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            string raw_id = HttpContext.User.FindFirstValue("id");
+
+            if (!int.TryParse(raw_id, out int user_id))
+            {
+                return Unauthorized();
+            }
+
+            bool success = await _roleRepository.AddRole(user_id, request.SecretToken);
+            if (!success)
+                return BadRequest();
+            return Ok();
         }
 
         [HttpPost("register")]
@@ -69,6 +120,47 @@ namespace cryptogram_backend.Controllers
             return Ok();
         }
 
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequest refRequest)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest();
+            bool isValidToken = _refreshTokenValidator.Validate(refRequest.RefreshToken);
+
+            if (!isValidToken)
+                return BadRequest(new { error = "Invalid refresh token." });
+
+            RefreshToken refreshTokenFound = await _refreshTokenRepository.GetByToken(refRequest.RefreshToken);
+            if (refreshTokenFound == null)
+                return BadRequest(new { error = "Invalid refresh token." });
+
+            await _refreshTokenRepository.Delete(refreshTokenFound.ref_id);
+
+            User user = await _userRepository.GetById(refreshTokenFound.user_id);
+            if(user == null)
+                return BadRequest(new { error = "User not found." });
+
+            AuthenticatedUserResponse response = await _authenticator.Authenticate(user);
+
+            return Ok(response);
+
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            string raw_id = HttpContext.User.FindFirstValue("id");
+            if(!int.TryParse(raw_id, out int user_id))
+            {
+                return Unauthorized();
+            }
+
+            await _refreshTokenRepository.DeleteAllUserTokens(user_id);
+
+            return Ok();
+        }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
@@ -86,12 +178,9 @@ namespace cryptogram_backend.Controllers
             if (!correctPassword)
                 return Unauthorized();
 
-            string accessToken = _tokenGenerator.GenerateToken(user);
+            AuthenticatedUserResponse response = await _authenticator.Authenticate(user);
 
-            return Ok(new AuthenticatedUserResponse()
-            {
-                AccessToken = accessToken
-            });
+            return Ok(response);
         }
     }
 }
