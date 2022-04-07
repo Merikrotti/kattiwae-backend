@@ -1,6 +1,7 @@
 ﻿using cryptogram_backend.Database;
 using cryptogram_backend.Models;
 using cryptogram_backend.Modules;
+using cryptogram_backend.Services.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
@@ -15,8 +17,16 @@ namespace cryptogram_backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]/[action]")]
+    [Authorize(Roles="Secret,Admin")]
     public class CryptogramController : ControllerBase
     {
+        FavouriteRepository _favrepo;
+
+        public CryptogramController(FavouriteRepository favrepo)
+        {
+            _favrepo = favrepo;
+        }
+
         [HttpGet]
         [ActionName("PostUrl")]
         public async Task<IActionResult> PostUrl(string file, String answer)
@@ -166,9 +176,24 @@ namespace cryptogram_backend.Controllers
         public async Task<CryptogramModel> GetExact(int id)
         {
             CryptogramDb database = new CryptogramDb();
-            CryptogramModel latest = await database.GetExact(id);
+            CryptogramModel exact = await database.GetExact(id);
+            CryptogramModel latest = await database.GetLatest();
 
-            return latest;
+            if(exact.Id == latest.Id)
+            { 
+                string rawid = HttpContext.User.FindFirstValue("id");
+                if (!Int32.TryParse(rawid, out int user_id))
+                {
+                    return new CryptogramModel();
+                }
+
+                if (await _favrepo.IsFavourited(user_id, id))
+                    return exact;
+                else
+                    return new CryptogramModel();
+            }
+
+            return exact;
         }
 
         /*

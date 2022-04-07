@@ -8,6 +8,7 @@ using KattiSSO.Services.TokenGenerator;
 using KattiSSO.Services.TokenValidators;
 using KattiSSO.Services.UserRepositories;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,7 @@ namespace KattiSSO.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [EnableCors("Service")]
     public class AuthController : Controller
     {
         private readonly IUserRepository _userRepository;

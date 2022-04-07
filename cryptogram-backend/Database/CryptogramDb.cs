@@ -123,7 +123,7 @@ namespace cryptogram_backend.Database
         public async Task<CryptogramModel> GetExact(int id)
         {
             int latest = GetLatest().Result.Id;
-            if (id >= latest || id < 1)
+            if (id > latest || id < 1)
                 return null;
 
             conn.Open();

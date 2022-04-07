@@ -38,6 +38,22 @@ namespace KattiSSO
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            //Cors for refresh token
+            services.AddCors(options =>
+            {
+                options.AddPolicy("Service",
+                    builder =>
+                    {
+                        builder
+                            .SetIsOriginAllowedToAllowWildcardSubdomains()
+                            .WithOrigins("https://*.kattiwae.com")
+                            .AllowCredentials()
+                            .AllowAnyHeader()
+                            .AllowAnyMethod();
+                           
+                    });
+            });
+
             services.AddControllers();
 
 
@@ -71,7 +87,7 @@ namespace KattiSSO
             services.AddSingleton<TokenGenerator>();
             services.AddSingleton<RoleRepository>();
             services.AddSingleton<Authenticator>();
-
+            
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "KattiSSO", Version = "v1" });
@@ -94,11 +110,17 @@ namespace KattiSSO
                             .AllowAnyMethod()
                             .AllowAnyHeader());
             }
+            
+            
 
             app.UseHttpsRedirection();
 
             app.UseAuthentication();
+
             app.UseRouting();
+
+            app.UseCors();
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

@@ -15,6 +15,7 @@ namespace cryptogram_backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Secret,Admin")]
     public class FavouritesController : Controller
     {
         FavouriteRepository _favouriteRepository;
@@ -24,7 +25,6 @@ namespace cryptogram_backend.Controllers
             _favouriteRepository = favouriteRepository;
         }
 
-        [Authorize(Roles = "Secret,Admin")]
         [HttpGet("GetAccountData")]
         public IActionResult GetAccountData()
         {
@@ -33,7 +33,6 @@ namespace cryptogram_backend.Controllers
             return Ok(new { id = id, name = name });
         }
 
-        [Authorize(Roles = "Secret,Admin")]
         [HttpGet("getfavourites")]
         public async Task<IActionResult> GetFavourites(int page = -1)
         {
@@ -56,7 +55,26 @@ namespace cryptogram_backend.Controllers
             return Ok(new { favourites=favourites, total=total });
         }
 
-        [Authorize(Roles = "Secret,Admin")]
+        [HttpPost("isfavourited")]
+        public async Task<IActionResult> IsFavourited(PostFavourite request)
+        {
+            if(!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+
+            var rawid = HttpContext.User.FindFirstValue("id");
+
+            if (!Int32.TryParse(rawid, out int user_id))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _favouriteRepository.IsFavourited(user_id, request.img_id);
+
+            return Ok(new { result = result });
+        }
+        
         [HttpPost("removefavourite")]
         public async Task<IActionResult> RemoveFavourite([FromBody] PostFavourite request)
         {
@@ -77,7 +95,6 @@ namespace cryptogram_backend.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Secret,Admin")]
         [HttpPost("postfavourite")]
         public async Task<IActionResult> PostFavourite([FromBody] PostFavourite request)
         {
@@ -98,7 +115,6 @@ namespace cryptogram_backend.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Secret,Admin")]
         [HttpGet("GetDataWithFav")]
         public async Task<IActionResult> GetDataWithFav(int page)
         {

@@ -10,6 +10,45 @@ namespace cryptogram_backend.Services.Repository
     public class FavouriteRepository
     {
 
+        public async Task<bool> IsFavourited(int user_id, int img_id)
+        {
+            var conn = new DbConnection().GetConnection();
+            try
+            {
+                await conn.OpenAsync();
+                NpgsqlCommand command = new NpgsqlCommand("SELECT COUNT(*) FROM favourites WHERE user_id = @user_id AND img_id = @img_id", conn);
+
+                var psqlUser_id = command.Parameters.Add("user_id", NpgsqlTypes.NpgsqlDbType.Integer);
+                var psqlImg_id = command.Parameters.Add("img_id", NpgsqlTypes.NpgsqlDbType.Integer);
+
+                psqlImg_id.Value = img_id;
+                psqlUser_id.Value = user_id;
+
+                var reader = await command.ExecuteReaderAsync();
+
+                int total = 0;
+                while (await reader.ReadAsync())
+                {
+                    total = reader.GetInt32(0);
+                }
+
+                if (total < 1)
+                    return false;
+
+                return true;
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error in getTotalFavourites, " + e.Message);
+            }
+            finally
+            {
+                await conn.CloseAsync();
+            }
+            return false;
+        }
+
         public async Task<List<PreviousPageAuthorizedResponse>> GetData(int page) {
 
             List<PreviousPageAuthorizedResponse> list = new List<PreviousPageAuthorizedResponse>();
