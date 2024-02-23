@@ -11,6 +11,9 @@
 *.sln.docstates
 *.yaml
 
+#Config file to avoid publishing passwords
+cryptogram-backend/config.yaml
+
 #Ignore app settings, where secret tokens are stored
 appsettings.json
 
