@@ -1,7 +1,7 @@
 # cryptogram-backend and the SSO software
 Backend of cryptogram. Config.yaml file for PostgreSQL authentication.
 The SSO service is in KattiSSO/
-The interesting bits are ofcourse in Controllers, but most of the logic or database usage is in Project/Services/ They are used as singletons for ServiceCollection dependency injection.
+The interesting bits are ofcourse in Controllers, but most of the logic or database usage is in Project/Services/ They are used as singletons (in either Startup.cs) for ServiceCollection dependency injection.
 
 Most interesting bits are JWT authentication and using SQL for PSQL Database when Entity Framework wasn't available for it.
 
